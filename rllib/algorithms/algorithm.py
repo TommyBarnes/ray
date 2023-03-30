@@ -2555,6 +2555,13 @@ class Algorithm(Trainable):
                     local_worker=False,
                     healthy_only=False,
                 )
+
+        if not hasattr(self, "train_exec_impl"):
+            self.train_exec_impl = None
+
+        if not hasattr(self, "local_replay_buffer"):
+            self.local_replay_buffer = None
+
         # If necessary, restore replay data as well.
         if self.local_replay_buffer is not None:
             # TODO: Experimental functionality: Restore contents of replay
