@@ -591,27 +591,41 @@ class AgentCollector:
         return batch
 
     def _cache_in_np(self, cache_dict: Dict[str, List[np.ndarray]], key: str) -> None:
+
         def log_item(x, name):
-            if hasattr(x, 'shape'):
-                print(f"Buffer {name} {type(x)} shape:{x.shape}")
+            if isinstance(x, list) or isinstance(x, tuple):
+                print(f"{name} {type(x)} len:{len(x)}")
+                for i in range(len(x)):
+                    log_item(x[i], f"{name}[{i}]")
+            elif isinstance(x, dict):
+                print(f"{name} {type(x)} len:{len(x)}")
+                for k, v in x.items():
+                    log_item(v, f"{name}.{k}")
+            elif hasattr(x, 'shape'):
+                if len(x.shape) == 0:
+                    print(f"{name} {type(x)} shape:{x.shape} {x}")
+                else:
+                    print(f"{name} {type(x)} shape:{x.shape}")
             elif hasattr(x, '__len__'):
-                print(f"Buffer {name} {type(x)} len:{len(x)}")
+                print(f"{name} {type(x)} len:{len(x)}")
             else:
-                print(f"Buffer {name} {type(x)} {x}")
+                print(f"{name} {type(x)} {x}")
 
         """Caches the numpy version of the key in the buffer dict."""
         if key not in cache_dict:
-            print("Caching", key, type(self.buffers[key]))
-            for d in self.buffers[key]:
-                if isinstance(d, list):
-                    for i in range(len(d)):
-                        if isinstance(d[i], list) or isinstance(d[i], tuple):
-                            for j in range(len(d[i])):
-                                log_item(d[i][j], f"{key}[{i}][{j}]")
-                        else:
-                            log_item(d[i], f"{key}[{i}]")
-                else:
-                    log_item(d, "Buffer")
+            # print("Caching: ", key, type(self.buffers[key]))
+            # for d in self.buffers[key]:
+            #     log_item(d, key)
+
+            # for i,d in enumerate(self.buffers[key]):
+            #     try:
+            #         np_arr = _to_float_np_array(d)
+            #     except Exception as e:
+            #         print(f"Error converting {key}[{i}] to np array: ", e)
+            #         print("Iter type", type(self.buffers[key]))
+            #         print("Iter len", len(self.buffers[key]))
+            #         print("Type: ", type(d))
+            #         print("Value: ", d)
             cache_dict[key] = [_to_float_np_array(d) for d in self.buffers[key]]
 
     def _unflatten_as_buffer_struct(
