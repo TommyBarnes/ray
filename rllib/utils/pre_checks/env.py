@@ -534,7 +534,8 @@ def check_vector_env(env: "VectorEnv") -> None:
     if not env.observation_space.contains(reset_obs[0]):
         error = (
             _not_contained_error("vector_reset", "observation")
-            + f": \n\n reset_obs: {reset_obs}\n\n "
+            + f": \n\n env.observation_space: {env.observation_space}\n\n "
+            + f": \n\n reset_obs: {reset_obs[0]}\n\n "
             f"env.observation_space.sample(): {sampled_obs}\n\n "
         )
         raise ValueError(error)

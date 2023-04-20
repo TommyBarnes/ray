@@ -116,10 +116,18 @@ class PettingZooEnv(MultiAgentEnv):
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         info = self.env.reset(seed=seed, return_info=True, options=options)
-        return (
-            {self.env.agent_selection: self.env.observe(self.env.agent_selection)},
-            info or {},
-        )
+        new_code = False
+        if new_code:
+            print(f"new code reset")
+            return (
+                {agent_id: self.env.observe(agent_id) for agent_id in self.env.agents},
+                info or {},
+            )
+        else:
+            return (
+                {self.env.agent_selection: self.env.observe(self.env.agent_selection)},
+                info or {},
+            )
 
     def step(self, action):
         self.env.step(action[self.env.agent_selection])
@@ -128,21 +136,39 @@ class PettingZooEnv(MultiAgentEnv):
         terminated_d = {}
         truncated_d = {}
         info_d = {}
-        while self.env.agents:
-            obs, rew, terminated, truncated, info = self.env.last()
-            agent_id = self.env.agent_selection
-            obs_d[agent_id] = obs
-            rew_d[agent_id] = rew
-            terminated_d[agent_id] = terminated
-            truncated_d[agent_id] = truncated
-            info_d[agent_id] = info
-            if (
-                self.env.terminations[self.env.agent_selection]
-                or self.env.truncations[self.env.agent_selection]
-            ):
-                self.env.step(None)
-            else:
-                break
+
+        new_code = False
+        if new_code:
+            for agent_id in self.env.agents:
+                obs_d[agent_id] = self.env.observe(agent_id)
+                rew_d[agent_id] = self.env.rewards[agent_id]
+                terminated_d[agent_id] = self.env.terminations[agent_id]
+                truncated_d[agent_id] = self.env.truncations[agent_id]
+                info_d[agent_id] = self.env.infos[agent_id]
+            # if (
+            #     self.env.terminations[self.env.agent_selection]
+            #     or self.env.truncations[self.env.agent_selection]
+            # ):
+            #     self.env.step(None)
+            
+            print(f"new code step {obs_d.keys()}")
+        else:
+            #old code
+            while self.env.agents:
+                obs, rew, terminated, truncated, info = self.env.last()
+                agent_id = self.env.agent_selection
+                obs_d[agent_id] = obs
+                rew_d[agent_id] = rew
+                terminated_d[agent_id] = terminated
+                truncated_d[agent_id] = truncated
+                info_d[agent_id] = info
+                if (
+                    self.env.terminations[self.env.agent_selection]
+                    or self.env.truncations[self.env.agent_selection]
+                ):
+                    self.env.step(None)
+                else:
+                    break
 
         all_gone = not self.env.agents
         terminated_d["__all__"] = all_gone and all(terminated_d.values())

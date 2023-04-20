@@ -523,6 +523,19 @@ class RolloutWorker(ParallelIteratorWorker, FaultAwareApply):
         ):
             tf1.enable_eager_execution()
 
+        if ( tf and config.framework_str == "tf2" ):
+            gpus = tf.config.list_physical_devices('GPU')
+            if gpus:
+                try:
+                    # Currently, memory growth needs to be the same across GPUs
+                    for gpu in gpus:
+                        tf.config.experimental.set_memory_growth(gpu, True)
+                    logical_gpus = tf.config.list_logical_devices('GPU')
+                    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+                except RuntimeError as e:
+                    # Memory growth must be set before GPUs have been initialized
+                    print(e) 
+
         if self.config.log_level:
             logging.getLogger("ray.rllib").setLevel(self.config.log_level)
 
@@ -753,7 +766,7 @@ class RolloutWorker(ParallelIteratorWorker, FaultAwareApply):
             ):
                 raise ValueError(
                     f"Have multiple policies {self.policy_map}, but the "
-                    f"env {self.env} is not a subclass of BaseEnv, "
+                    f"env {self.env} is {type(self.env)}, which is not a subclass of BaseEnv, "
                     f"MultiAgentEnv, ActorHandle, or ExternalMultiAgentEnv!"
                 )
 

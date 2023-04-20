@@ -13,7 +13,7 @@ from ray.rllib.evaluation.episode_v2 import EpisodeV2
 from ray.rllib.evaluation.metrics import RolloutMetrics
 from ray.rllib.models.preprocessors import Preprocessor
 from ray.rllib.policy.policy import Policy
-from ray.rllib.policy.sample_batch import MultiAgentBatch, SampleBatch, concat_samples
+from ray.rllib.policy.sample_batch import MultiAgentBatch, SampleBatch, concat_samples, convert_ma_batch_to_sample_batch
 from ray.rllib.utils.annotations import DeveloperAPI
 from ray.rllib.utils.filter import Filter
 from ray.rllib.utils.numpy import convert_to_numpy
@@ -34,6 +34,7 @@ from ray.rllib.utils.typing import (
     StateBatches,
     TensorStructType,
 )
+
 from ray.util.debug import log_once
 
 if TYPE_CHECKING:
@@ -1042,8 +1043,9 @@ class EnvRunnerV2:
                 # changed (mapping fn not staying constant within one episode).
                 policy: Policy = _try_find_policy_again(eval_data)
 
+            # Here we can make sure only the right agent is evaluated.
             input_dict = _batch_inference_sample_batches(
-                [d.data.sample_batch for d in eval_data]
+                [convert_ma_batch_to_sample_batch(d.data.sample_batch) for d in eval_data]
             )
 
             eval_results[policy_id] = policy.compute_actions_from_input_dict(
